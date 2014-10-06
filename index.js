@@ -324,13 +324,10 @@ Context.prototype.declarationToIdentifier = function declarationToIdentifier(nod
     var prevToken = rocamboleToken.findPrevNonEmpty(node.startToken),
         forin = node.parent;
 
-    console.log('prevToken.value', prevToken.value);
-    console.log('node.declarations.length', node.declarations.length);
-
+    // Set identifier as left
     forin.left = node.declarations.shift().id;
 
-    console.log('forin.left', forin.left && forin.left.name);
-
+    // Update references
     forin.left.startToken.prev = prevToken;
     prevToken.next = forin.left.startToken;
 };
