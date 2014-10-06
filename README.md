@@ -1,7 +1,8 @@
+**NO PRODUCTION PLUGIN: IT'S STILL UNDER DEVELOPMENT**
+
 # [esformatter](https://github.com/millermedeiros/esformatter)-onevar
 
 > esformatter plugin for enforcing one var statement per function scope
-
 
 **Esformatter-onevar** is a plugin for [esformatter](https://github.com/millermedeiros/esformatter) meant for onevar enforcement in function scope. Recommended by Douglas Crockford in his [coding style guide](http://javascript.crockford.com/code.html).
 
