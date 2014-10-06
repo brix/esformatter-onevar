@@ -278,7 +278,7 @@ Context.prototype.declarationUnwrap = function declarationUnwrap(node) {
         }),
         declarationFirst = declarations[0],
         declarationLast = declarations[declarations.length - 1],
-        parent = node.parent.body,
+        parent = node.parent.type === 'SwitchCase' ? node.parent.consequent : node.parent.body,
         index = parent.indexOf(node),
         args;
 
