@@ -82,9 +82,12 @@ Context.prototype.isScopeBlockChild = function isScopeBlockChild(node) {
     return false;
 };
 
-Context.prototype.isLoop = function isLoop(node) {
-    /*node.type === 'WhileStatement' || node.type === 'DoWhileStatement'*/
-    return node.type === 'ForStatement' || node.type === 'ForInStatement';
+Context.prototype.isFor = function isFor(node) {
+    return node.type === 'ForStatement';
+};
+
+Context.prototype.isForin = function isFor(node) {
+    return node.type === 'ForInStatement';
 };
 
 Context.prototype.isVars = function isVars(node) {
@@ -230,7 +233,11 @@ Context.prototype.declaratorToAssignment = function declaratorToAssignment(node)
     var vars = node.parent,
         commaToken;
 
-    if (this.isLoop(vars.parent)) {
+    if (this.isForin(vars.parent)) {
+        return;
+    }
+
+    if (this.isFor(vars.parent)) {
         // Convert to assignment
         node.type = 'AssignmentExpression';
         node.operator = '=';
@@ -260,49 +267,73 @@ Context.prototype.declaratorToAssignment = function declaratorToAssignment(node)
     }
 };
 
-
-Context.prototype.unwrapVars = function unwrapVars(node) {
+Context.prototype.declarationUnwrap = function declarationUnwrap(node) {
     // Ensure block before unwrap declarations
     if (!this.isBlock(node.parent)) {
         braces(node.parent);
     }
 
-    var declarationFirst = node.declarations[0],
-        declarationLast = node.declarations[node.declarations.length - 1],
+    var declarations = node.declarations.filter(function (assignment) {
+            return assignment.right ? true : false;
+        }),
+        declarationFirst = declarations[0],
+        declarationLast = declarations[declarations.length - 1],
         parent = node.parent.body,
         index = parent.indexOf(node),
         args;
 
-    // Set new start references
-    declarationFirst.startToken.prev = node.startToken.prev;
-    node.startToken.prev.next = declarationFirst.startToken;
+    if (declarations.length) {
+        // Set new start references
+        declarationFirst.startToken.prev = node.startToken.prev;
+        node.startToken.prev.next = declarationFirst.startToken;
 
-    // Set new end reference
-    declarationLast.endToken.next = node.endToken.next;
-    if (node.endToken.next) {
-        node.endToken.next.prev = declarationLast.endToken;
-    }
-    // Set end token `;`
-    if ((rocamboleToken.findNextNonEmpty(declarationLast.endToken) || {}).value !== ';') {
-        rocamboleToken.after(declarationLast.endToken, {
-            type: 'Punctuator',
-            value: ';'
-        });
+        // Set new end reference
+        declarationLast.endToken.next = node.endToken.next;
+        if (node.endToken.next) {
+            node.endToken.next.prev = declarationLast.endToken;
+        }
+
+        // Set end token `;`
+        if ((rocamboleToken.findNextNonEmpty(declarationLast.endToken) || {}).value !== ';') {
+            rocamboleToken.after(declarationLast.endToken, {
+                type: 'Punctuator',
+                value: ';'
+            });
+        }
+    } else {
+        node.startToken.prev.next = node.endToken.next;
+        node.endToken.next.prev = node.startToken.prev;
+
+        declarations = [];
     }
 
     // Set new parent and level for each assignment
-    node.declarations.forEach(function (declaration) {
+    declarations.forEach(function (declaration) {
         declaration.depth = declaration.depth - 1;
         declaration.parent = parent;
     });
 
     // Replace declarations with assignments
-    args = [].concat(node.declarations);
+    args = [].concat(declarations);
     args.unshift(1);
     args.unshift(index);
     parent.splice.apply(parent, args);
 };
 
+Context.prototype.declarationToIdentifier = function declarationToIdentifier(node) {
+    var prevToken = rocamboleToken.findPrevNonEmpty(node.startToken),
+        forin = node.parent;
+
+    console.log('prevToken.value', prevToken.value);
+    console.log('node.declarations.length', node.declarations.length);
+
+    forin.left = node.declarations.shift().id;
+
+    console.log('forin.left', forin.left && forin.left.name);
+
+    forin.left.startToken.prev = prevToken;
+    prevToken.next = forin.left.startToken;
+};
 
 Context.prototype.declarationToSequence = function declarationToSequence(node) {
     var prevToken = node.startToken.prev,
@@ -354,10 +385,12 @@ Context.traverse = function traverse() {
                     // Add declarations to first declarations
                     node.declarations.forEach(ctx.declaratorToAssignment, ctx);
 
-                    if (ctx.isLoop(node.parent)) {
+                    if (ctx.isFor(node.parent)) {
                         ctx.declarationToSequence(node);
+                    } else if (ctx.isForin(node.parent)) {
+                        ctx.declarationToIdentifier(node);
                     } else {
-                        ctx.unwrapVars(node);
+                        ctx.declarationUnwrap(node);
                     }
                 }
             }
