@@ -38,7 +38,7 @@ for (i = 0, l = 10; i < l; i++) {
 ```
 
 For more information see:
-- The [jsHint](https://github.com/jshint/jshint/) option - [onevar](http://www.jshint.com/docs/options/#onevar)
+- The [jscs](http://catatron.com/node-jscs/) option - [disallowMultipleVarDecl](http://catatron.com/node-jscs/rules/disallow-multiple-var-decl/)
 
 *For any other formatting (such as onevar placement, spacing and line wrapping) use esformatter or other plugins.*
 
