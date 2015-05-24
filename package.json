@@ -4,7 +4,7 @@
   "description": "esformatter plugin: enforces a single var per function",
   "author": {
     "name": "Evan Vosberg",
-    "email": "evanvosberg@inext.me"
+    "email": "evanvosberg@urban.to"
   },
   "license": "MIT",
   "repository": {
